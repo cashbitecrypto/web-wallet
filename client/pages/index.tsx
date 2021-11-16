@@ -1,5 +1,5 @@
 import { useUser } from '@auth0/nextjs-auth0'
-import { gql, useQuery } from '@apollo/client';
+import { gql, useMutation, useQuery } from '@apollo/client';
 import type { NextPage } from 'next'
 
 const WalletQuery = gql`
@@ -34,9 +34,28 @@ const WalletQuery = gql`
   }
 `
 
+const CreateWalletMutation = gql`
+  mutation($name: String!) {
+    createWallet(name: $name) {
+      address
+    }
+  }
+`
+
 const Home: NextPage = () => {
   const { user, error, isLoading } = useUser();
   const { loading, error: gqlError, data } = useQuery(WalletQuery);
+  const [createWallet, { loading: loading1, error: gqlError1, data: data1 }] = useMutation(CreateWalletMutation);
+
+  const createWalletHandler = async () => {
+    const name = prompt("Please enter a name for the wallet");
+    await createWallet({
+      variables: {
+        name
+      }
+    });
+    alert("Please refresh to see the new wallet");
+  }
 
   if (isLoading) return <div>One sec...</div>;
   if (loading) return <div>One moment...</div>;
@@ -48,11 +67,11 @@ const Home: NextPage = () => {
 
     return (
       <div>
-
         <h1>Account</h1>
         <p>Welcome {user.name}! <a href="/api/auth/logout">Logout</a>.</p>
         <p><b>Raw User Token:</b> <code>{JSON.stringify(user)}</code></p>
         <h1>Wallets</h1>
+        <button onClick={createWalletHandler}>Create Wallet</button>
         {
           data.allWallets.map((wallet: any) => (
             <div key={wallet.id}>
@@ -63,36 +82,41 @@ const Home: NextPage = () => {
             </div>
           ))
         }
-        <h1>Wallet {data.wallet.name}</h1>
-        <p>
-          <b>Unlocked Balance:</b> {data.wallet.unlockedBalance} CB<br/>
-          <b>Locked Balance:</b> {data.wallet.lockedBalance} CB<br/>
-        </p>
-        <table style={{border: 1}}>
-          <thead>
-            <tr>
-              <th>Time</th>
-              <th>Amount</th>
-              <th>Payment ID</th>
-              <th>Extra</th>
-            </tr>
-          </thead>
-          <tbody>
-            {
-              data.wallet.transactions.map((tx: any) => (
-                <tr key={tx.hash}>
-                  <td>{tx.hash}</td>
-                  <td>{tx.amount}</td>
-                  <td>{tx.paymentId}</td>
-                  <td>
-                    {tx.isCoinbaseTransaction && "Mining Reward"}<br/>
-                    Unlocks at {tx.unlockTime}
-                  </td>
+        {
+          data.wallet && (
+            <div>
+            <h1>Wallet {data.wallet.name}</h1>
+            <p>
+              <b>Unlocked Balance:</b> {data.wallet.unlockedBalance} CB<br/>
+              <b>Locked Balance:</b> {data.wallet.lockedBalance} CB<br/>
+            </p>
+            <table style={{border: 1}}>
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>Amount</th>
+                  <th>Payment ID</th>
+                  <th>Extra</th>
                 </tr>
-              ))
-            }
-          </tbody>
-        </table>
+              </thead>
+              <tbody>
+                {
+                  data.wallet.transactions.map((tx: any) => (
+                    <tr key={tx.hash}>
+                      <td>{tx.hash}</td>
+                      <td>{tx.amount}</td>
+                      <td>{tx.paymentId}</td>
+                      <td>
+                        {tx.isCoinbaseTransaction && "Mining Reward"}<br/>
+                        Unlocks at {tx.unlockTime}
+                      </td>
+                    </tr>
+                  ))
+                }
+              </tbody>
+            </table>
+            </div>          )
+        }
         <h1>Info</h1>
         <p>
           <b>Wallet / Daemon / Network Height:</b> {data.info.walletHeight} / {data.info.daemonHeight} / {data.info.networkHeight}
