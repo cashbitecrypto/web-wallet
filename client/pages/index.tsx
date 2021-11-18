@@ -1,132 +1,74 @@
 import { useUser } from '@auth0/nextjs-auth0'
 import { gql, useMutation, useQuery } from '@apollo/client';
 import type { NextPage } from 'next'
+import Layout from '../components/layout';
+import { Avatar, Box, Container, IconButton, List, ListItem, ListItemAvatar, ListItemText, Typography, Paper } from '@mui/material';
+import { CallMade, CallReceived, CheckCircle, OpenInNew, TrackChanges } from '@mui/icons-material';
+import { green, orange, red } from '@mui/material/colors';
+import Transaction from '../components/transaction';
 
 const WalletQuery = gql`
   query {
-    allWallets {
-      id
-      name
-      address
-    }
     wallet {
-      id
       name
-      address
       lockedBalance
       unlockedBalance
       transactions {
-        blockHeight
-        isCoinbaseTransaction
         fee
         paymentId
         unlockTime
         hash
         timestamp
         amount
+        isCoinbaseTransaction
       }
     }
-    info {
-      walletHeight
-      daemonHeight
-      networkHeight
-    }
   }
-`
-
-const CreateWalletMutation = gql`
-  mutation($name: String!) {
-    createWallet(name: $name) {
-      address
-    }
-  }
-`
+`;
 
 const Home: NextPage = () => {
-  const { user, error, isLoading } = useUser();
-  const { loading, error: gqlError, data } = useQuery(WalletQuery);
-  const [createWallet, { loading: loading1, error: gqlError1, data: data1 }] = useMutation(CreateWalletMutation);
+  const query = useQuery(WalletQuery);
 
-  const createWalletHandler = async () => {
-    const name = prompt("Please enter a name for the wallet");
-    await createWallet({
-      variables: {
-        name
-      }
-    });
-    alert("Please refresh to see the new wallet");
-  }
+  let content;
 
-  if (isLoading) return <div>One sec...</div>;
-  if (loading) return <div>One moment...</div>;
-  if (error) return <div>Something went wrong with authentication: {error.message}</div>;
-  if (user) {
-    if (gqlError) {
-      return <div>Something went wrong with query: {gqlError.message}</div>;
-    }
-
-    return (
-      <div>
-        <h1>Account</h1>
-        <p>Welcome {user.name}! <a href="/api/auth/logout">Logout</a>.</p>
-        <p><b>Raw User Token:</b> <code>{JSON.stringify(user)}</code></p>
-        <h1>Wallets</h1>
-        <button onClick={createWalletHandler}>Create Wallet</button>
-        {
-          data.allWallets.map((wallet: any) => (
-            <div key={wallet.id}>
-              <h3>{wallet.name}</h3>
-              <p>
-                <b>Address:</b> {wallet.address}
-              </p>
-            </div>
-          ))
-        }
-        {
-          data.wallet && (
-            <div>
-            <h1>Wallet {data.wallet.name}</h1>
-            <p>
-              <b>Unlocked Balance:</b> {data.wallet.unlockedBalance} CB<br/>
-              <b>Locked Balance:</b> {data.wallet.lockedBalance} CB<br/>
-            </p>
-            <table style={{border: 1}}>
-              <thead>
-                <tr>
-                  <th>Time</th>
-                  <th>Amount</th>
-                  <th>Payment ID</th>
-                  <th>Extra</th>
-                </tr>
-              </thead>
-              <tbody>
-                {
-                  data.wallet.transactions.map((tx: any) => (
-                    <tr key={tx.hash}>
-                      <td>{tx.hash}</td>
-                      <td>{tx.amount}</td>
-                      <td>{tx.paymentId}</td>
-                      <td>
-                        {tx.isCoinbaseTransaction && "Mining Reward"}<br/>
-                        Unlocks at {tx.unlockTime}
-                      </td>
-                    </tr>
+  if (query.loading) {
+    content = <p>Loading...</p>;
+  } else if (query.error) {
+    content = <>
+      <p>Something went wrong: {query.error.toString()}</p>
+      <p>Got a 401 error? Please go to the settings tab to login.</p>
+    </>;
+  } else if (!query.data.wallet) {
+    content = <p>You have no wallet. Please go to the settings page to make one.</p>;
+  } else {
+    content = <>
+      <Box sx={{ backgroundColor: '#9013fe', color: 'white', margin: 0, paddingY: 10, textAlign: 'center' }}>
+        <Container maxWidth="lg">
+          <Typography variant="h2">{query.data.wallet.unlockedBalance} CB</Typography>
+          <Typography variant="overline">Available Balance</Typography>
+        </Container>
+      </Box>
+      <Container sx={{ marginY: 3 }}>
+        <Paper variant="outlined">
+          <List sx={{ bgcolor: 'background.paper', overflowX: 'clip' }}>
+            {
+              query.data.wallet.transactions.length > 0
+                ? query.data.wallet.transactions.map((tx: any) => (
+                    <Transaction key={tx.hash} transaction={tx}/>
                   ))
-                }
-              </tbody>
-            </table>
-            </div>          )
-        }
-        <h1>Info</h1>
-        <p>
-          <b>Wallet / Daemon / Network Height:</b> {data.info.walletHeight} / {data.info.daemonHeight} / {data.info.networkHeight}
-        </p>
-        <p><b>Raw Query Result:</b> <code>{JSON.stringify(data)}</code></p>
-      </div>
-    )
+                : <Typography variant="caption" sx={{ paddingLeft: 3 }}>No transactions yet</Typography>
+            }
+          </List>
+        </Paper>
+      </Container>
+    </>;
   }
 
-  return <a href="/api/auth/login">Login</a>;
+  return (
+    <Layout title="Overview">
+      {content}
+    </Layout>
+  )
 }
 
 export default Home
