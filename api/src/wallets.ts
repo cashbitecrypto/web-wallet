@@ -50,7 +50,7 @@ class WalletController {
 
     // const data = await fs.readFile(this.filePath);
     // const [wallet, error] = await WalletBackend.loadWalletFromJSON(this.daemon, data.toString("utf-8"), options);
-    const [wallet, error] = await WalletBackend.openWalletFromFile(this.daemon, this.filePath, "keyboardcat");
+    const [wallet, error] = await WalletBackend.openWalletFromFile(this.daemon, this.filePath, "keyboardcat", options);
     if (error) {
       throw error;
     }
