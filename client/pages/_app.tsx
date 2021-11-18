@@ -4,13 +4,13 @@ import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client'
 import createEmotionCache from '../src/createEmotionCache';
 import { CacheProvider, ThemeProvider } from '@emotion/react';
 import Head from 'next/head';
-import theme from '../src/theme';
-import { CssBaseline } from '@mui/material';
+import { createTheme, CssBaseline, useMediaQuery } from '@mui/material';
 import type { EmotionCache } from '@emotion/cache';
 import '@fontsource/roboto/300.css';
 import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
+import React from 'react';
 
 interface AppPropsWithEmotion extends AppProps {
   emotionCache: EmotionCache
@@ -24,6 +24,21 @@ const client = new ApolloClient({
 const clientSideEmotonCache = createEmotionCache();
 
 function MyApp({ Component, pageProps, emotionCache = clientSideEmotonCache }: AppPropsWithEmotion) {
+  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+
+  const theme = React.useMemo(
+    () =>
+      createTheme({
+        palette: {
+          mode: prefersDarkMode ? 'dark' : 'light',
+          primary: {
+            main: '#9013fe'
+          }
+        },
+      }),
+    [prefersDarkMode],
+  );
+
   return (
     <CacheProvider value={emotionCache}>
       <Head>

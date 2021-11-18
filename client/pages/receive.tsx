@@ -1,8 +1,8 @@
 import { NextPage } from "next";
 import Layout from "../components/layout";
 import { gql, useQuery } from "@apollo/client";
-import { Box, Container, Grid, Paper, Typography } from "@mui/material";
-import Image, { ImageLoaderProps } from 'next/image';
+import { Box, Container, Grid, Paper, Typography, useMediaQuery } from "@mui/material";
+import QRCode from 'react-qr-code';
 
 const WalletQuery = gql`
   query {
@@ -12,11 +12,10 @@ const WalletQuery = gql`
   }
 `;
 
-const qrLoader = ({ src, width, quality }: ImageLoaderProps) => {
-  return `https://api.qrserver.com/v1/create-qr-code?data=${src}&size=${width}x${width}`;
-}
-
 const Receive: NextPage = () => {
+  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+  const qrBgColor = prefersDarkMode ? '#000000' : '#ffffff';
+  const qrFgColor = prefersDarkMode ? '#ffffff' : '#000000';
   const query = useQuery(WalletQuery);
 
   let content;
@@ -34,7 +33,7 @@ const Receive: NextPage = () => {
     content = <Container sx={{ marginY: 3 }}>
       <Paper variant="outlined" sx={{ textAlign: 'center', padding: 3 }}>
         <Box sx={{ margin: 3}}>
-          <Image alt="Wallet Address" src={query.data.wallet.address} width={250} height={250} loader={qrLoader}/>
+          <QRCode value={`cashbite:${query.data.wallet.address}`} bgColor={qrBgColor} fgColor={qrFgColor} />
         </Box>
         <Typography>Send coins to:</Typography>
         <Typography sx={{ overflowX: 'auto' }}>{query.data.wallet.address}</Typography>
