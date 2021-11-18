@@ -14,10 +14,10 @@ class WalletController {
   filePath: string;
 
   constructor(
+    filePath: string = "./wallet.wal",
     host: string = "node1.cashbite.org",
     port: number = 443,
-    addressPrefix: number = 28116,
-    filePath: string = "./wallet.wal"
+    addressPrefix: number = 28116
   ) {
     this.addressPrefix = addressPrefix;
     this.filePath = filePath;
@@ -82,7 +82,7 @@ class WalletController {
     if (address === undefined) {
       throw new Error("Failed to create wallet");
     }
-    this.save();
+    await this.save();
     return address;
   }
 
