@@ -6,7 +6,7 @@ import resolvers from './resolvers';
 import WalletController from './wallets';
 
 const prisma = new PrismaClient();
-const walletController = new WalletController();
+const walletController = new WalletController(process.env.WALLET_PATH || "./wallet.wal");
 
 const server = new ApolloServer({
   typeDefs,
